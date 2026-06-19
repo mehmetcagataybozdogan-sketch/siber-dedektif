@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🏆 TEBRİKLER! | Siber Dedektif</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #0A0E1A;
+      --bg2:    #0F1629;
+      --neon:   #00FF88;
+      --cyber:  #00BFFF;
+      --gold:   #FFD700;
+      --text:   #C8D8E8;
+      --dim:    #4A5A7A;
+      --border: #1E2D4A;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Courier New', Courier, monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    #matrix-canvas {
+      position: fixed; top:0; left:0;
+      width:100%; height:100%;
+      z-index:0; opacity:0.06;
+      pointer-events:none;
+    }
+
+    /* Konfeti efekti için */
+    #confetti-canvas {
+      position: fixed; top:0; left:0;
+      width:100%; height:100%;
+      z-index:2; pointer-events:none;
+    }
+
+    .page-wrapper {
+      position: relative; z-index:3;
+      display: flex; flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 48px;
+      min-height: 100vh;
+    }
+
+    /* =============================================
+       TROPHY ANİMASYONU
+    ============================================= */
+    .trophy {
+      font-size: 96px;
+      margin-bottom: 8px;
+      animation: trophy-bounce 1s ease-in-out infinite alternate;
+      filter: drop-shadow(0 0 24px var(--gold));
+    }
+    @keyframes trophy-bounce {
+      0%   { transform: translateY(0)   scale(1);    }
+      100% { transform: translateY(-8px) scale(1.05); }
+    }
+
+    /* =============================================
+       BAŞLIK
+    ============================================= */
+    .congrats-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--neon), var(--cyber));
+      color: #000;
+      font-family: system-ui, sans-serif;
+      font-size: 11px; font-weight: 900;
+      letter-spacing: 3px; text-transform: uppercase;
+      padding: 5px 14px; border-radius: 6px;
+      margin-bottom: 16px;
+    }
+
+    .main-title {
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: clamp(36px, 9vw, 60px);
+      font-weight: 900;
+      line-height: 1.0;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    /* Takım rengi JS ile inject edilecek */
+    .main-title.team-mavi    { color: #00BFFF; text-shadow: 0 0 30px rgba(0,191,255,0.7); }
+    .main-title.team-kirmizi { color: #FF003C; text-shadow: 0 0 30px rgba(255,0,60,0.7); }
+    .main-title.team-default { color: var(--neon); text-shadow: 0 0 30px rgba(0,255,136,0.7); }
+
+    .subtitle {
+      font-size: 14px; color: var(--dim);
+      letter-spacing: 1px; text-align: center;
+      margin-bottom: 32px;
+    }
+
+    /* =============================================
+       BAŞARI KARTI
+    ============================================= */
+    .success-card {
+      width: 100%; max-width: 440px;
+      background: var(--bg2);
+      border: 1px solid var(--neon);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 0 32px rgba(0,255,136,0.2);
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .success-icon-row {
+      display: flex; justify-content: center;
+      gap: 16px; font-size: 36px;
+      margin-bottom: 20px;
+    }
+
+    .success-text {
+      font-size: 16px; line-height: 1.8;
+      color: var(--text); margin-bottom: 16px;
+    }
+
+    /* Süre göstergesi */
+    .time-badge {
+      display: inline-block;
+      background: rgba(0,255,136,0.08);
+      border: 1px solid var(--neon);
+      border-radius: 8px;
+      padding: 8px 20px;
+      color: var(--neon);
+      font-size: 18px; font-weight: 700;
+      letter-spacing: 2px;
+    }
+    .time-label {
+      font-size: 11px; color: var(--dim);
+      letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    /* =============================================
+       ROZETLER
+    ============================================= */
+    .badges-section {
+      width: 100%; max-width: 440px;
+      margin-bottom: 28px;
+    }
+    .badges-title {
+      font-size: 11px; color: var(--dim);
+      letter-spacing: 3px; text-transform: uppercase;
+      text-align: center; margin-bottom: 16px;
+    }
+    .badges-grid {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 12px;
+    }
+    .badge-item {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 8px;
+      text-align: center;
+    }
+    .badge-icon { font-size: 28px; margin-bottom: 6px; display: block; }
+    .badge-name { font-size: 11px; color: var(--dim); line-height: 1.3; }
+
+    /* =============================================
+       EĞİTİM MESAJI
+    ============================================= */
+    .lesson-box {
+      width: 100%; max-width: 440px;
+      background: rgba(123,47,255,0.06);
+      border: 1px solid #3A1A7A;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 28px;
+    }
+    .lesson-title {
+      font-size: 12px; color: #9B6FFF;
+      letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .lesson-text {
+      font-size: 14px; line-height: 1.7; color: var(--text);
+    }
+    .lesson-text strong { color: var(--neon); }
+
+    /* =============================================
+       TEKRAR OYNA BUTONU
+    ============================================= */
+    .restart-btn {
+      display: block;
+      width: 100%; max-width: 440px;
+      padding: 18px;
+      background: linear-gradient(135deg, rgba(0,255,136,0.15), rgba(0,255,136,0.05));
+      border: 2px solid var(--neon);
+      border-radius: 14px;
+      color: var(--neon);
+      font-family: system-ui, sans-serif;
+      font-size: 16px; font-weight: 900;
+      letter-spacing: 1px;
+      text-align: center; text-decoration: none;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(0,255,136,0.2);
+      min-height: 56px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px;
+    }
+    .restart-btn:hover { box-shadow: 0 0 40px rgba(0,255,136,0.4); }
+
+    .footer {
+      font-size: 11px; color: var(--dim);
+      text-align: center; letter-spacing: 1px;
+      margin-top: 8px;
+    }
+    .footer span { color: var(--neon); }
+
+  </style>
+</head>
+<body>
+
+  <canvas id="matrix-canvas"></canvas>
+  <canvas id="confetti-canvas"></canvas>
+
+  <div class="page-wrapper">
+
+    <div class="trophy">🏆</div>
+
+    <div class="congrats-badge" id="team-label">🎉 GÖREV TAMAMLANDI</div>
+
+    <h1 class="main-title team-default" id="main-title">
+      TEBRİKLER!
+    </h1>
+    <p class="subtitle" id="subtitle">// Siber Dedektif görevi başarıyla tamamlandı //</p>
+
+    <!-- BAŞARI KARTI -->
+    <div class="success-card">
+      <div class="success-icon-row">
+        <span>🕵️</span><span>🔐</span><span>⭐</span>
+      </div>
+      <p class="success-text" id="success-text">
+        Tüm istasyonları başarıyla geçtin ve
+        hazineye ulaştın! Sen gerçek bir
+        <strong style="color:var(--neon)">Siber Dedektif</strong>sin! 🎖️
+      </p>
+      <div class="time-label">Tamamlama Zamanın</div>
+      <div class="time-badge" id="completion-time">⏱ Kaydedildi!</div>
+    </div>
+
+    <!-- ROZETLER -->
+    <div class="badges-section">
+      <div class="badges-title">🏅 Kazandığın Rozetler</div>
+      <div class="badges-grid">
+        <div class="badge-item">
+          <span class="badge-icon">🔍</span>
+          <div class="badge-name">İpucu Dedektifi</div>
+        </div>
+        <div class="badge-item">
+          <span class="badge-icon">🛡️</span>
+          <div class="badge-name">Tuzak Avcısı</div>
+        </div>
+        <div class="badge-item">
+          <span class="badge-icon">🔐</span>
+          <div class="badge-name">Şifre Kırıcı</div>
+        </div>
+        <div class="badge-item">
+          <span class="badge-icon">🗺️</span>
+          <div class="badge-name">Rota Ustası</div>
+        </div>
+        <div class="badge-item">
+          <span class="badge-icon">⚡</span>
+          <div class="badge-name">Hız Ajansı</div>
+        </div>
+        <div class="badge-item">
+          <span class="badge-icon">🌐</span>
+          <div class="badge-name">Siber Kahraman</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EĞİTİM MESAJI -->
+    <div class="lesson-box">
+      <div class="lesson-title">📚 Bugün Ne Öğrendik?</div>
+      <p class="lesson-text">
+        ✅ <strong>QR kodlar tehlikeli olabilir.</strong>
+        Her QR kodu taramadan önce kaynağını sorgula.<br><br>
+        ✅ <strong>Phishing = Oltalama saldırısı.</strong>
+        Sahte bağlantılar seni tuzağa düşürmeye çalışır.<br><br>
+        ✅ <strong>Güçlü şifreler önemlidir.</strong>
+        Her hesapta farklı şifre kullan!<br><br>
+        ✅ <strong>Şüpheli durumda büyüklerine sor.</strong>
+        İnternette bir şey garip görünüyorsa yalnız karar verme.
+      </p>
+    </div>
+
+    <!-- BUTONLAR -->
+    <a href="index.html" class="restart-btn">
+      🔄 Tekrar Oyna
+    </a>
+
+    <div class="footer">
+      <span>SİBERAY</span> – Siber Güvenlik ve Teknoloji Kulübü<br>
+      Her dedektif öğrenmeye devam eder 🕵️
+    </div>
+
+  </div><!-- /page-wrapper -->
+
+  <script>
+    /* =============================================
+       TAKIM PARAMETRESİNİ OKU
+       URL: tebrikler.html?takim=mavi veya ?takim=kirmizi
+    ============================================= */
+    const params = new URLSearchParams(window.location.search);
+    const takim  = params.get('takim') || 'default';
+
+    const titleEl    = document.getElementById('main-title');
+    const badgeEl    = document.getElementById('team-label');
+    const subtitleEl = document.getElementById('subtitle');
+    const successEl  = document.getElementById('success-text');
+
+    if (takim === 'mavi') {
+      titleEl.className    = 'main-title team-mavi';
+      badgeEl.textContent  = '🔵 MAVİ TAKIM – GÖREV TAMAMLANDI';
+      subtitleEl.textContent = '// Mavi Takım rotasını başarıyla tamamladı //';
+      successEl.innerHTML  = 'Mavi Takım olarak tüm istasyonları başarıyla geçtin!<br>Sen gerçek bir <strong style="color:#00BFFF">Siber Dedektif</strong>sin! 🎖️';
+    } else if (takim === 'kirmizi') {
+      titleEl.className    = 'main-title team-kirmizi';
+      badgeEl.textContent  = '🔴 KIRMIZI TAKIM – GÖREV TAMAMLANDI';
+      subtitleEl.textContent = '// Kırmızı Takım rotasını başarıyla tamamladı //';
+      successEl.innerHTML  = 'Kırmızı Takım olarak tüm istasyonları başarıyla geçtin!<br>Sen gerçek bir <strong style="color:#FF003C">Siber Dedektif</strong>sin! 🎖️';
+    }
+
+    /* =============================================
+       TAMAMLAMA ZAMANI
+       sessionStorage ile basit zaman kaydı
+       (Gerçek ölçüm için: index.html'de başlatılabilir)
+    ============================================= */
+    const timeEl = document.getElementById('completion-time');
+    try {
+      const startTime = parseInt(sessionStorage.getItem('gameStart') || '0');
+      if (startTime > 0) {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const mins    = Math.floor(elapsed / 60);
+        const secs    = elapsed % 60;
+        timeEl.textContent = `⏱ ${mins}dk ${secs}sn`;
+      }
+    } catch(e) {}
+
+    /* =============================================
+       MATRIX YAĞMURU (Altın / Yeşil)
+    ============================================= */
+    const canvas = document.getElementById('matrix-canvas');
+    const ctx    = canvas.getContext('2d');
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    window.addEventListener('resize', () => { canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
+    const chars = '01⭐🏆ABCDEF#$@>'; const fs = 13;
+    let cols = Math.floor(canvas.width / fs); let dr = Array(cols).fill(1);
+    setInterval(() => {
+      ctx.fillStyle = 'rgba(10,14,26,0.05)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#00FF88'; ctx.font = fs + 'px Courier New';
+      dr.forEach((d,i) => {
+        ctx.fillText(chars[Math.floor(Math.random()*chars.length)], i*fs, d*fs);
+        if (d*fs > canvas.height && Math.random() > 0.975) dr[i] = 0; dr[i]++;
+      });
+    }, 55);
+
+    /* =============================================
+       KONFETİ ANİMASYONU
+    ============================================= */
+    const cc  = document.getElementById('confetti-canvas');
+    const cctx = cc.getContext('2d');
+    cc.width = window.innerWidth; cc.height = window.innerHeight;
+    window.addEventListener('resize', () => { cc.width=window.innerWidth; cc.height=window.innerHeight; });
+
+    const confettiColors = ['#00FF88','#00BFFF','#FFD700','#FF003C','#7B2FFF','#FF6B35'];
+    const pieces = Array.from({ length: 80 }, () => ({
+      x:  Math.random() * cc.width,
+      y:  Math.random() * cc.height - cc.height,
+      w:  6 + Math.random() * 8,
+      h:  10 + Math.random() * 6,
+      color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
+      speed: 1.5 + Math.random() * 3,
+      angle: Math.random() * 360,
+      spin:  (Math.random() - 0.5) * 6,
+    }));
+
+    function drawConfetti() {
+      cctx.clearRect(0, 0, cc.width, cc.height);
+      pieces.forEach(p => {
+        cctx.save();
+        cctx.translate(p.x, p.y);
+        cctx.rotate(p.angle * Math.PI / 180);
+        cctx.fillStyle = p.color;
+        cctx.globalAlpha = 0.85;
+        cctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+        cctx.restore();
+        p.y     += p.speed;
+        p.angle += p.spin;
+        if (p.y > cc.height + 20) {
+          p.y = -20;
+          p.x = Math.random() * cc.width;
+        }
+      });
+      requestAnimationFrame(drawConfetti);
+    }
+    drawConfetti();
+  </script>
+
+</body>
+</html>

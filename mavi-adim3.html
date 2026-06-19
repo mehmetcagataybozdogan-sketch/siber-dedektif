@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MAVİ TAKIM – Adım 3 | Siber Dedektif</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0A0E1A; --bg2: #0F1629; --neon: #00FF88; --cyber: #00BFFF;
+      --accent: #7B2FFF; --text: #C8D8E8; --dim: #4A5A7A; --border: #1E2D4A;
+      --team-color: #00BFFF; --team-glow: rgba(0,191,255,0.3);
+    }
+    html, body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; min-height: 100vh; }
+    #matrix-canvas { position: fixed; top:0; left:0; width:100%; height:100%; z-index:0; opacity:0.05; pointer-events:none; }
+    .page-wrapper { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; padding:20px 16px 48px; min-height:100vh; }
+    .top-bar { width:100%; max-width:480px; display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+    .back-btn { display:flex; align-items:center; gap:6px; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 14px; color:var(--dim); font-size:12px; text-decoration:none; transition:border-color 0.2s; }
+    .back-btn:hover { border-color:var(--team-color); color:var(--team-color); }
+    .team-badge { padding:6px 14px; border-radius:8px; background:rgba(0,191,255,0.1); border:1px solid var(--team-color); color:var(--team-color); font-size:12px; font-weight:700; letter-spacing:1px; }
+    .progress-area { width:100%; max-width:480px; margin-bottom:28px; }
+    .progress-label { font-size:11px; color:var(--dim); letter-spacing:2px; margin-bottom:8px; text-transform:uppercase; }
+    .progress-steps { display:flex; gap:8px; }
+    .step-dot { flex:1; height:4px; border-radius:4px; background:var(--border); }
+    .step-dot.active { background:var(--team-color); box-shadow:0 0 8px var(--team-glow); }
+    .step-dot.done   { background:var(--neon); }
+    .station-card { width:100%; max-width:480px; background:var(--bg2); border:1px solid var(--team-color); border-radius:16px; overflow:hidden; box-shadow:0 0 24px var(--team-glow); margin-bottom:24px; }
+    .station-header { background:linear-gradient(135deg,rgba(0,191,255,0.12),rgba(0,0,0,0)); padding:20px 20px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:14px; }
+    .station-icon { font-size:40px; line-height:1; filter:drop-shadow(0 0 8px var(--team-color)); }
+    .station-num { font-size:11px; color:var(--team-color); letter-spacing:2px; text-transform:uppercase; margin-bottom:4px; }
+    .station-name { font-family:system-ui,sans-serif; font-size:20px; font-weight:800; color:#fff; }
+    .station-body { padding:20px; }
+    .clue-label { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--dim); margin-bottom:10px; }
+    .clue-text { font-size:15px; line-height:1.7; color:var(--text); background:rgba(0,0,0,0.3); border-left:3px solid var(--team-color); padding:14px 16px; border-radius:0 8px 8px 0; margin-bottom:20px; }
+    .hint-toggle { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--accent); cursor:pointer; margin-bottom:8px; background:none; border:none; font-family:inherit; }
+    .hint-box { display:none; font-size:13px; color:var(--dim); background:rgba(123,47,255,0.08); border:1px dashed var(--accent); border-radius:8px; padding:12px; margin-bottom:20px; line-height:1.6; }
+    .hint-box.visible { display:block; }
+    .password-label { font-size:12px; color:var(--dim); letter-spacing:1px; margin-bottom:8px; }
+    .password-area { width:100%; max-width:480px; margin-bottom:16px; }
+    .password-row { display:flex; gap:10px; }
+    .password-input { flex:1; background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:14px 16px; color:var(--neon); font-family:'Courier New',monospace; font-size:16px; outline:none; transition:border-color 0.2s; letter-spacing:3px; text-transform:uppercase; }
+    .password-input:focus { border-color:var(--team-color); }
+    .password-input::placeholder { color:var(--dim); letter-spacing:1px; }
+    .password-btn { padding:14px 20px; background:var(--team-color); border:none; border-radius:10px; color:#000; font-family:system-ui,sans-serif; font-size:14px; font-weight:800; cursor:pointer; }
+    .password-feedback { margin-top:8px; font-size:13px; min-height:20px; }
+    .feedback-ok  { color:var(--neon); }
+    .feedback-err { color:#FF003C; }
+    .next-btn { display:block; width:100%; max-width:480px; padding:18px; background:linear-gradient(135deg,rgba(0,191,255,0.15),rgba(0,191,255,0.05)); border:2px solid var(--team-color); border-radius:14px; color:var(--team-color); font-family:system-ui,sans-serif; font-size:16px; font-weight:800; letter-spacing:1px; text-align:center; text-decoration:none; cursor:pointer; box-shadow:0 0 16px rgba(0,191,255,0.2); min-height:56px; }
+    .next-btn:hover { box-shadow:0 0 32px rgba(0,191,255,0.45); }
+  </style>
+</head>
+<body>
+  <canvas id="matrix-canvas"></canvas>
+  <div class="page-wrapper">
+    <div class="top-bar">
+      <a href="mavi-adim2.html" class="back-btn">← Önceki</a>
+      <div class="team-badge">🔵 MAVİ TAKIM</div>
+    </div>
+    <div class="progress-area">
+      <div class="progress-label">İstasyon İlerlemesi</div>
+      <div class="progress-steps">
+        <div class="step-dot done"></div>
+        <div class="step-dot done"></div>
+        <div class="step-dot active"></div>
+        <div class="step-dot"></div>
+      </div>
+    </div>
+    <div class="station-card">
+      <div class="station-header">
+        <div class="station-icon">🌳</div>
+        <div class="station-meta">
+          <div class="station-num">İstasyon 03 / 04</div>
+          <!-- ↓↓↓ İSTASYON ADI ↓↓↓ -->
+          <div class="station-name">Kampüs Bahçesi</div>
+        </div>
+      </div>
+      <div class="station-body">
+        <div class="clue-label">🔎 Bilmecen Hazır:</div>
+        <!--
+          ↓↓↓ BİLMECEYİ BURADAN DEĞİŞTİR ↓↓↓
+        -->
+        <div class="clue-text">
+          "Köklerim toprağa, dallarım göğe uzanır,<br>
+          Gölgemde öğrenciler dinlenir ve hayaller kurar.<br>
+          Yazın yeşil, kışın çıplak dururum,<br>
+          Hayatın tam ortasındaki en büyük varlığım.<br>
+          <br>
+          Merkezi bahçedeki en büyük ağacın<br>
+          dibindeki <strong style="color:var(--team-color)">mavi taşa</strong> bak! 🔵"
+        </div>
+        <button class="hint-toggle" onclick="toggleHint(this)">💡 İpucu göster</button>
+        <div class="hint-box">
+          <!-- ↓↓↓ İPUCU ↓↓↓ -->
+          Rektörlük binasının önündeki büyük bahçeyi düşün. En görkemli ağaç hangisi? 🌲
+        </div>
+        <div class="password-label">📡 İstasyon Şifresini Gir:</div>
+        <div class="password-area">
+          <div class="password-row">
+            <input type="text" class="password-input" id="pw-input" placeholder="Şifre..." maxlength="10" autocomplete="off" />
+            <button class="password-btn" onclick="checkPassword()">GİR</button>
+          </div>
+          <div class="password-feedback" id="pw-feedback"></div>
+        </div>
+      </div>
+    </div>
+    <!-- ↓↓↓ SON ADIM → FİNAL SAYFASI ↓↓↓ -->
+    <a href="mavi-adim4-final.html" class="next-btn" id="next-btn" style="display:none;">
+      🏁 Son İstasyona Git! →
+    </a>
+  </div>
+  <script>
+    const canvas=document.getElementById('matrix-canvas'); const ctx=canvas.getContext('2d');
+    canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+    window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;});
+    const chars='01ABCDEFabcdef#$%@><'; const fs=13; let cols=Math.floor(canvas.width/fs); let dr=Array(cols).fill(1);
+    setInterval(()=>{ctx.fillStyle='rgba(10,14,26,0.05)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#00BFFF';ctx.font=fs+'px Courier New';dr.forEach((d,i)=>{ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*fs,d*fs);if(d*fs>canvas.height&&Math.random()>0.975)dr[i]=0;dr[i]++;});},55);
+    function toggleHint(btn){const box=btn.nextElementSibling;box.classList.toggle('visible');btn.textContent=box.classList.contains('visible')?'🙈 İpucunu gizle':'💡 İpucu göster';}
+    /* ↓↓↓ ŞİFREYİ BURADAN DEĞİŞTİR ↓↓↓ */
+    const CORRECT_PASSWORD='AGAC';
+    function checkPassword(){
+      const input=document.getElementById('pw-input').value.trim().toUpperCase();
+      const feedback=document.getElementById('pw-feedback');
+      const nextBtn=document.getElementById('next-btn');
+      if(input===CORRECT_PASSWORD){feedback.textContent='✅ Mükemmel! Son istasyona geçiyorsun!';feedback.className='password-feedback feedback-ok';nextBtn.style.display='block';setTimeout(()=>nextBtn.scrollIntoView({behavior:'smooth',block:'center'}),200);}
+      else if(input===''){feedback.textContent='⚠️ Şifre girmen gerekiyor!';feedback.className='password-feedback feedback-err';}
+      else{feedback.textContent='❌ Yanlış şifre. Tekrar dene!';feedback.className='password-feedback feedback-err';document.getElementById('pw-input').style.borderColor='#FF003C';setTimeout(()=>{document.getElementById('pw-input').style.borderColor='';},1000);}
+    }
+    document.getElementById('pw-input').addEventListener('keydown',e=>{if(e.key==='Enter')checkPassword();});
+  </script>
+</body>
+</html>

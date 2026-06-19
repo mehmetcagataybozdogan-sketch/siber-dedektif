@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MAVİ TAKIM – Son İstasyon | Siber Dedektif</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0A0E1A; --bg2: #0F1629; --neon: #00FF88;
+      --text: #C8D8E8; --dim: #4A5A7A; --border: #1E2D4A;
+      --team-color: #00BFFF; --team-glow: rgba(0,191,255,0.3);
+      --accent: #7B2FFF;
+    }
+    html, body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; min-height: 100vh; }
+    #matrix-canvas { position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; opacity:0.05; pointer-events:none; }
+    .page-wrapper { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; padding:20px 16px 48px; min-height:100vh; }
+    .top-bar { width:100%; max-width:480px; display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+    .back-btn { display:flex; align-items:center; gap:6px; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 14px; color:var(--dim); font-size:12px; text-decoration:none; }
+    .team-badge { padding:6px 14px; border-radius:8px; background:rgba(0,191,255,0.1); border:1px solid var(--team-color); color:var(--team-color); font-size:12px; font-weight:700; letter-spacing:1px; }
+    .progress-area { width:100%; max-width:480px; margin-bottom:28px; }
+    .progress-label { font-size:11px; color:var(--dim); letter-spacing:2px; margin-bottom:8px; text-transform:uppercase; }
+    .progress-steps { display:flex; gap:8px; }
+    .step-dot { flex:1; height:4px; border-radius:4px; background:var(--border); }
+    .step-dot.done { background:var(--neon); }
+    .step-dot.active { background:var(--team-color); box-shadow:0 0 8px var(--team-glow); }
+
+    /* SON İSTASYON ÖZEL KART */
+    .final-station-card {
+      width:100%; max-width:480px;
+      background: linear-gradient(145deg, #071A30, #0D2540);
+      border: 2px solid var(--team-color);
+      border-radius: 20px;
+      padding: 28px 24px;
+      box-shadow: 0 0 40px rgba(0,191,255,0.35);
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .final-icon {
+      font-size: 56px;
+      margin-bottom: 16px;
+      display: block;
+      filter: drop-shadow(0 0 16px var(--team-color));
+      animation: pulse-icon 2s ease-in-out infinite;
+    }
+    @keyframes pulse-icon {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
+    .final-station-num {
+      font-size: 11px; color: var(--team-color);
+      letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px;
+    }
+    .final-station-name {
+      font-family: system-ui, sans-serif;
+      font-size: 24px; font-weight: 900; color: #fff;
+      margin-bottom: 20px;
+    }
+
+    .final-clue-text {
+      font-size: 15px; line-height: 1.8; color: var(--text);
+      background: rgba(0,0,0,0.3);
+      border-left: 3px solid var(--team-color);
+      padding: 16px 18px;
+      border-radius: 0 10px 10px 0;
+      text-align: left;
+      margin-bottom: 20px;
+    }
+
+    .reveal-box {
+      background: rgba(0,255,136,0.05);
+      border: 1px solid var(--neon);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    .reveal-label {
+      font-size: 11px; color: var(--neon);
+      letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px;
+    }
+    .reveal-code {
+      font-family: system-ui, sans-serif;
+      font-size: 28px; font-weight: 900;
+      color: var(--neon);
+      letter-spacing: 4px;
+      text-shadow: 0 0 20px rgba(0,255,136,0.5);
+    }
+
+    .password-label { font-size:12px; color:var(--dim); letter-spacing:1px; margin-bottom:8px; text-align:left; }
+    .password-row { display:flex; gap:10px; }
+    .password-input { flex:1; background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:14px 16px; color:var(--neon); font-family:'Courier New',monospace; font-size:16px; outline:none; transition:border-color 0.2s; letter-spacing:3px; text-transform:uppercase; }
+    .password-input:focus { border-color:var(--team-color); }
+    .password-input::placeholder { color:var(--dim); letter-spacing:1px; }
+    .password-btn { padding:14px 20px; background:var(--team-color); border:none; border-radius:10px; color:#000; font-family:system-ui,sans-serif; font-size:14px; font-weight:800; cursor:pointer; }
+    .password-feedback { margin-top:8px; font-size:13px; min-height:20px; text-align:left; }
+    .feedback-ok  { color:var(--neon); }
+    .feedback-err { color:#FF003C; }
+
+    .finish-btn {
+      display: block; width:100%; max-width:480px;
+      padding: 20px;
+      background: linear-gradient(135deg, var(--neon), #00BFFF);
+      border: none; border-radius: 14px;
+      color: #000; font-family: system-ui, sans-serif;
+      font-size: 18px; font-weight: 900; letter-spacing: 1px;
+      text-align: center; text-decoration: none; cursor: pointer;
+      box-shadow: 0 0 32px rgba(0,255,136,0.4);
+      min-height: 60px;
+      animation: glow-btn 2s ease-in-out infinite;
+    }
+    @keyframes glow-btn {
+      0%, 100% { box-shadow: 0 0 20px rgba(0,255,136,0.4); }
+      50% { box-shadow: 0 0 48px rgba(0,255,136,0.8); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix-canvas"></canvas>
+  <div class="page-wrapper">
+    <div class="top-bar">
+      <a href="mavi-adim3.html" class="back-btn">← Önceki</a>
+      <div class="team-badge">🔵 MAVİ TAKIM</div>
+    </div>
+    <div class="progress-area">
+      <div class="progress-label">İstasyon İlerlemesi</div>
+      <div class="progress-steps">
+        <div class="step-dot done"></div>
+        <div class="step-dot done"></div>
+        <div class="step-dot done"></div>
+        <div class="step-dot active"></div>
+      </div>
+    </div>
+
+    <div class="final-station-card">
+      <span class="final-icon">🎯</span>
+      <div class="final-station-num">Son İstasyon 04 / 04</div>
+      <div class="final-station-name">Merkez Amfi</div>
+
+      <!--
+        ↓↓↓ SON BİLMECE / FİNAL KONUMU METNİNİ DEĞİŞTİR ↓↓↓
+      -->
+      <div class="final-clue-text">
+        "Öğrencilerin sahneye çıktığı,<br>
+        konferansların verildiği,<br>
+        fikirlerin havada uçtuğu yer...<br>
+        <br>
+        Sahnenin tam önündeki <strong style="color:var(--team-color)">MAVİ bayrak</strong>ı bul<br>
+        ve organizatöre teslim ol! 🏆<br>
+        <br>
+        Son şifren hazır. Onu da gir
+        ve <strong style="color:var(--neon)">TEBRİKLER sayfasına</strong> ulaş!"
+      </div>
+
+      <div class="password-label">📡 Final Şifresini Gir:</div>
+      <div class="password-row">
+        <input type="text" class="password-input" id="pw-input" placeholder="Final şifresi..." maxlength="10" autocomplete="off" />
+        <button class="password-btn" onclick="checkPassword()">GİR</button>
+      </div>
+      <div class="password-feedback" id="pw-feedback"></div>
+    </div>
+
+    <!-- Şifre doğruysa gösterilir -->
+    <!-- ↓↓↓ HER İKİ TAKIM DA tebrikler.html'e yönlenir ↓↓↓ -->
+    <a href="tebrikler.html?takim=mavi" class="finish-btn" id="next-btn" style="display:none;">
+      🏆 TEBRİKLER SAYFASINA GİT!
+    </a>
+  </div>
+
+  <script>
+    const canvas=document.getElementById('matrix-canvas'); const ctx=canvas.getContext('2d');
+    canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+    window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;});
+    const chars='01ABCDEFabcdef#$%@><'; const fs=13; let cols=Math.floor(canvas.width/fs); let dr=Array(cols).fill(1);
+    setInterval(()=>{ctx.fillStyle='rgba(10,14,26,0.05)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#00BFFF';ctx.font=fs+'px Courier New';dr.forEach((d,i)=>{ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*fs,d*fs);if(d*fs>canvas.height&&Math.random()>0.975)dr[i]=0;dr[i]++;});},55);
+
+    /* ↓↓↓ FİNAL ŞİFRESİNİ BURADAN DEĞİŞTİR ↓↓↓ */
+    const CORRECT_PASSWORD = 'ZAFER';
+
+    function checkPassword(){
+      const input=document.getElementById('pw-input').value.trim().toUpperCase();
+      const feedback=document.getElementById('pw-feedback');
+      const nextBtn=document.getElementById('next-btn');
+      if(input===CORRECT_PASSWORD){
+        feedback.textContent='🎉 DOĞRU! Tebrikler sayfasına yönlendiriliyorsun...';
+        feedback.className='password-feedback feedback-ok';
+        nextBtn.style.display='block';
+        setTimeout(()=>nextBtn.scrollIntoView({behavior:'smooth',block:'center'}),200);
+      } else if(input===''){
+        feedback.textContent='⚠️ Final şifresini girmen gerekiyor!';
+        feedback.className='password-feedback feedback-err';
+      } else {
+        feedback.textContent='❌ Yanlış şifre! Organizatörden yardım iste.';
+        feedback.className='password-feedback feedback-err';
+        document.getElementById('pw-input').style.borderColor='#FF003C';
+        setTimeout(()=>{document.getElementById('pw-input').style.borderColor='';},1000);
+      }
+    }
+    document.getElementById('pw-input').addEventListener('keydown',e=>{if(e.key==='Enter')checkPassword();});
+  </script>
+</body>
+</html>

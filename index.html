@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Siber Dedektif – Siberay Hazine Avı</title>
+  <style>
+    /* =============================================
+       GLOBAL RESET & TEMEL STİLLER
+    ============================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0A0E1A;   /* Derin uzay siyahı */
+      --bg2:       #0F1629;   /* Kart arka planı */
+      --neon:      #00FF88;   /* Neon yeşil */
+      --cyber:     #00BFFF;   /* Siber mavi */
+      --accent:    #7B2FFF;   /* Mor aksan */
+      --text:      #C8D8E8;   /* Ana metin */
+      --dim:       #4A5A7A;   /* Soluk metin */
+      --border:    #1E2D4A;   /* Kenar çizgisi */
+      --mavi:      #00BFFF;
+      --kirmizi:   #FF003C;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Courier New', Courier, monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* =============================================
+       MATRIX YAĞMURU (Canvas arka plan)
+    ============================================= */
+    #matrix-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      opacity: 0.07;
+      pointer-events: none;
+    }
+
+    /* =============================================
+       SAYFA İÇERİĞİ
+    ============================================= */
+    .page-wrapper {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 48px;
+      min-height: 100vh;
+    }
+
+    /* =============================================
+       LOGO / BAŞLIK ALANI
+    ============================================= */
+    .logo-area {
+      text-align: center;
+      margin-bottom: 32px;
+      margin-top: 16px;
+    }
+
+    .logo-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--bg2), #0D1933);
+      border: 1px solid var(--neon);
+      border-radius: 12px;
+      padding: 6px 16px;
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: var(--neon);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      box-shadow: 0 0 12px rgba(0,255,136,0.3);
+    }
+
+    .main-title {
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: clamp(32px, 8vw, 56px);
+      font-weight: 900;
+      line-height: 1.1;
+      color: #fff;
+      text-shadow: 0 0 30px var(--neon);
+      letter-spacing: -1px;
+    }
+
+    .main-title span {
+      color: var(--neon);
+    }
+
+    .subtitle {
+      margin-top: 12px;
+      font-size: 14px;
+      color: var(--dim);
+      letter-spacing: 1px;
+    }
+
+    /* =============================================
+       TERMİNAL KUTUSU (Hikaye/Açıklama)
+    ============================================= */
+    .terminal-box {
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.5);
+    }
+
+    .terminal-header {
+      background: #141E35;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-red   { background: #FF5F57; }
+    .dot-yellow{ background: #FFBD2E; }
+    .dot-green { background: #28CA41; }
+
+    .terminal-title-bar {
+      margin-left: 8px;
+      font-size: 11px;
+      color: var(--dim);
+      letter-spacing: 1px;
+    }
+
+    .terminal-body {
+      padding: 20px 20px 24px;
+    }
+
+    .terminal-line {
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--text);
+    }
+
+    .terminal-line .prompt { color: var(--neon); }
+    .terminal-line .cmd    { color: var(--cyber); }
+    .terminal-line .out    { color: var(--text); }
+
+    /* Yazı makinesi efekti için */
+    .typewriter {
+      overflow: hidden;
+      white-space: normal;
+      color: var(--neon);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    /* =============================================
+       TAKIM SEÇİM KARTLARI
+    ============================================= */
+    .section-label {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .team-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 32px;
+    }
+
+    .team-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      border-radius: 14px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.15s, box-shadow 0.2s;
+      min-height: 120px;
+      gap: 10px;
+      /* Dokunmatik için büyük hedef */
+    }
+
+    .team-card:active { transform: scale(0.97); }
+
+    /* MAVİ TAKIM */
+    .card-mavi {
+      background: linear-gradient(135deg, #071A30, #0D2540);
+      border-color: var(--mavi);
+      box-shadow: 0 0 20px rgba(0,191,255,0.2);
+    }
+    .card-mavi:hover { box-shadow: 0 0 32px rgba(0,191,255,0.45); }
+
+    /* KIRMIZI TAKIM */
+    .card-kirmizi {
+      background: linear-gradient(135deg, #300710, #450A15);
+      border-color: var(--kirmizi);
+      box-shadow: 0 0 20px rgba(255,0,60,0.2);
+    }
+    .card-kirmizi:hover { box-shadow: 0 0 32px rgba(255,0,60,0.45); }
+
+    .card-icon {
+      font-size: 36px;
+      line-height: 1;
+    }
+
+    .card-name {
+      font-family: system-ui, sans-serif;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .card-mavi    .card-name { color: var(--mavi); }
+    .card-kirmizi .card-name { color: var(--kirmizi); }
+
+    .card-desc {
+      font-size: 11px;
+      color: var(--dim);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* =============================================
+       KURALLAR BÖLÜMÜ
+    ============================================= */
+    .rules-box {
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 32px;
+    }
+
+    .rules-title {
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .rule-item {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+      align-items: flex-start;
+    }
+
+    .rule-num {
+      min-width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      background: rgba(123,47,255,0.2);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .rule-text {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* =============================================
+       FOOTER
+    ============================================= */
+    .footer {
+      font-size: 11px;
+      color: var(--dim);
+      text-align: center;
+      letter-spacing: 1px;
+      margin-top: auto;
+    }
+    .footer span { color: var(--neon); }
+
+  </style>
+</head>
+<body>
+
+  <!-- Matrix yağmuru canvas -->
+  <canvas id="matrix-canvas"></canvas>
+
+  <div class="page-wrapper">
+
+    <!-- LOGO & BAŞLIK -->
+    <div class="logo-area">
+      <div class="logo-badge">🛡️ SİBERAY – Siber Güvenlik ve Teknoloji Kulübü</div>
+      <h1 class="main-title">🔍 SİBER<br><span>DEDEKTİF</span></h1>
+      <p class="subtitle">// Hazine Avı Etkinliği v1.0 //</p>
+    </div>
+
+    <!-- TERMİNAL AÇIKLAMA -->
+    <div class="terminal-box">
+      <div class="terminal-header">
+        <div class="dot dot-red"></div>
+        <div class="dot dot-yellow"></div>
+        <div class="dot dot-green"></div>
+        <span class="terminal-title-bar">mission_briefing.txt</span>
+      </div>
+      <div class="terminal-body">
+        <div class="terminal-line"><span class="prompt">$</span> <span class="cmd">cat görev_bilgisi.txt</span></div>
+        <br>
+        <div class="typewriter" id="typewriter-text"></div>
+      </div>
+    </div>
+
+    <!-- TAKIM SEÇİMİ -->
+    <p class="section-label">// Takımını seç ve göreve başla //</p>
+
+    <div class="team-cards">
+      <!-- Mavi Takım → Adım 1 -->
+      <a href="mavi-adim1.html" class="team-card card-mavi">
+        <div class="card-icon">🔵</div>
+        <div class="card-name">Mavi Takım</div>
+        <div class="card-desc">İstasyon A'dan başla</div>
+      </a>
+
+      <!-- Kırmızı Takım → Adım 1 (farklı istasyon) -->
+      <a href="kirmizi-adim1.html" class="team-card card-kirmizi">
+        <div class="card-icon">🔴</div>
+        <div class="card-name">Kırmızı Takım</div>
+        <div class="card-desc">İstasyon B'den başla</div>
+      </a>
+    </div>
+
+    <!-- KURALLAR -->
+    <div class="rules-box">
+      <div class="rules-title">⚙️ Görev Kuralları</div>
+
+      <div class="rule-item">
+        <div class="rule-num">1</div>
+        <div class="rule-text">QR kodları oku, bilmeceleri çöz ve bir sonraki istasyona ilerle.</div>
+      </div>
+      <div class="rule-item">
+        <div class="rule-num">2</div>
+        <div class="rule-text">Dikkat! Etrafta <strong style="color:#FF003C">TUZAK QR kodlar</strong> var. Yanlış kodu okursan geri dönmen gerekir!</div>
+      </div>
+      <div class="rule-item">
+        <div class="rule-num">3</div>
+        <div class="rule-text">İki takım farklı rotalardan gider, finalde aynı noktada buluşur.</div>
+      </div>
+      <div class="rule-item">
+        <div class="rule-num">4</div>
+        <div class="rule-text">Karşı takımın rotasını takip etme – bu bir siber dedektif yarışması! 🕵️</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Powered by <span>SIBERAY</span> · Siber Güvenlik ve Teknoloji Kulübü
+    </div>
+
+  </div><!-- /page-wrapper -->
+
+  <script>
+    /* =============================================
+       MATRIX YAĞMURU ANİMASYONU
+    ============================================= */
+    const canvas = document.getElementById('matrix-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*<>/\\|{}[]';
+    const fontSize = 14;
+    let columns = Math.floor(canvas.width / fontSize);
+    let drops = Array(columns).fill(1);
+
+    function drawMatrix() {
+      ctx.fillStyle = 'rgba(10,14,26,0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#00FF88';
+      ctx.font = fontSize + 'px Courier New';
+
+      for (let i = 0; i < drops.length; i++) {
+        const char = chars[Math.floor(Math.random() * chars.length)];
+        ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      }
+    }
+    setInterval(drawMatrix, 50);
+
+    /* =============================================
+       TYPEWRITER EFEKTİ
+       Metni buradan değiştirebilirsin ↓
+    ============================================= */
+    const missionText = [
+      "⚡ Ajan, hoş geldin!",
+      "",
+      "Görevin: Kampüse gizlenmiş",
+      "şifreli QR kodları bul,",
+      "bilmeceleri çöz ve hazineye",
+      "ulaş!",
+      "",
+      "⚠️  Dikkat: Sahte QR kodlar",
+      "seni yanıltmaya çalışacak.",
+      "Sadece doğru istasyonları",
+      "takip et.",
+      "",
+      "İyi şanslar, Dedektif! 🔐"
+    ].join('\n');
+
+    const el = document.getElementById('typewriter-text');
+    let idx = 0;
+    function type() {
+      if (idx < missionText.length) {
+        const ch = missionText[idx];
+        el.innerHTML += ch === '\n' ? '<br>' : ch;
+        idx++;
+        setTimeout(type, ch === '\n' ? 80 : 30);
+      }
+    }
+    // Kısa gecikmeyle başlat
+    setTimeout(type, 600);
+  </script>
+
+</body>
+</html>

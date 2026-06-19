@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>⚠️ DİKKAT! Tuzak QR Kodu | Siber Dedektif</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #0A0005;
+      --bg2:    #1A0008;
+      --danger: #FF003C;
+      --warn:   #FF6B00;
+      --text:   #FFD0D8;
+      --dim:    #7A3040;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Courier New', Courier, monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Alarm Titreşimi Animasyonu */
+    @keyframes alarm-flash {
+      0%, 100% { background: var(--bg); }
+      50%       { background: #1A0008; }
+    }
+    body { animation: alarm-flash 0.8s ease-in-out infinite; }
+
+    /* Kırmızı matrix yağmuru canvas */
+    #matrix-canvas {
+      position: fixed; top:0; left:0;
+      width:100%; height:100%;
+      z-index:0; opacity:0.12;
+      pointer-events:none;
+    }
+
+    .page-wrapper {
+      position: relative; z-index:1;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    /* =============================================
+       BÜYÜK ALARM İKONU
+    ============================================= */
+    .alarm-icon {
+      font-size: 80px;
+      margin-bottom: 16px;
+      animation: icon-bounce 0.6s ease-in-out infinite alternate;
+      filter: drop-shadow(0 0 20px var(--danger));
+    }
+    @keyframes icon-bounce {
+      0%   { transform: scale(1)    rotate(-3deg); }
+      100% { transform: scale(1.1)  rotate( 3deg); }
+    }
+
+    /* =============================================
+       ANA UYARI KUTUSU
+    ============================================= */
+    .alert-box {
+      width: 100%; max-width: 440px;
+      background: linear-gradient(145deg, #1A0008, #250010);
+      border: 3px solid var(--danger);
+      border-radius: 20px;
+      padding: 28px 24px;
+      text-align: center;
+      box-shadow:
+        0 0 40px rgba(255,0,60,0.5),
+        inset 0 0 40px rgba(255,0,60,0.05);
+      margin-bottom: 24px;
+    }
+
+    .alert-label {
+      display: inline-block;
+      background: var(--danger);
+      color: #fff;
+      font-family: system-ui, sans-serif;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+
+    .alert-title {
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: clamp(22px, 6vw, 32px);
+      font-weight: 900;
+      color: var(--danger);
+      line-height: 1.2;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px rgba(255,0,60,0.7);
+    }
+
+    .alert-message {
+      font-size: 16px;
+      line-height: 1.8;
+      color: var(--text);
+      margin-bottom: 24px;
+    }
+
+    .alert-message strong {
+      color: #FF6B00;
+      display: block;
+      margin-top: 8px;
+    }
+
+    /* =============================================
+       EĞİTİCİ AÇIKLAMA KUTUSU
+    ============================================= */
+    .education-box {
+      width: 100%; max-width: 440px;
+      background: rgba(255,107,0,0.08);
+      border: 1px solid var(--warn);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .edu-title {
+      font-size: 13px;
+      color: var(--warn);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .edu-item {
+      display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;
+    }
+
+    .edu-bullet {
+      color: var(--warn); font-size: 16px;
+      flex-shrink: 0; margin-top: 1px;
+    }
+
+    .edu-text {
+      font-size: 14px; line-height: 1.6;
+      color: #C8A8A0;
+    }
+
+    /* =============================================
+       GERİ DÖN BUTONU
+    ============================================= */
+    .back-btn {
+      display: block;
+      width: 100%; max-width: 440px;
+      padding: 18px;
+      background: linear-gradient(135deg, rgba(255,0,60,0.2), rgba(255,0,60,0.08));
+      border: 2px solid var(--danger);
+      border-radius: 14px;
+      color: var(--danger);
+      font-family: system-ui, sans-serif;
+      font-size: 16px; font-weight: 900;
+      letter-spacing: 1px;
+      text-align: center; text-decoration: none;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(255,0,60,0.3);
+      min-height: 56px;
+      display: flex; align-items: center; justify-content: center;
+      transition: box-shadow 0.2s;
+    }
+    .back-btn:hover { box-shadow: 0 0 40px rgba(255,0,60,0.6); }
+
+    /* Geri sayım */
+    .countdown {
+      font-size: 12px;
+      color: var(--dim);
+      text-align: center;
+      margin-top: 12px;
+      letter-spacing: 1px;
+    }
+    .countdown span { color: var(--danger); font-weight: 700; }
+
+  </style>
+</head>
+<body>
+
+  <canvas id="matrix-canvas"></canvas>
+
+  <div class="page-wrapper">
+
+    <div class="alarm-icon">🚨</div>
+
+    <!-- ANA UYARI -->
+    <div class="alert-box">
+      <div class="alert-label">⚠️ TUZAK QR KOD TESPİT EDİLDİ</div>
+
+      <h1 class="alert-title">
+        DİKKAT!<br>
+        SİBER TUZAĞA<br>
+        DÜŞTÜN!
+      </h1>
+
+      <p class="alert-message">
+        Güvenli olmayan bir bağlantıya tıkladın.
+        Gerçek hayatta bu, bilgilerinin çalınmasına
+        neden olabilirdi!
+        <strong>🔴 Hemen geri dön ve doğru QR kodu bul!</strong>
+      </p>
+    </div>
+
+    <!-- EĞİTİCİ BÖLÜM -->
+    <div class="education-box">
+      <div class="edu-title">📚 Siber Güvenlik Dersi</div>
+
+      <div class="edu-item">
+        <div class="edu-bullet">🔍</div>
+        <div class="edu-text">
+          <strong style="color:#FFB080">QR kodu taramadan önce:</strong>
+          QR kodu kimin koyduğuna bak. Resmi görünmüyor mu? Tarama!
+        </div>
+      </div>
+
+      <div class="edu-item">
+        <div class="edu-bullet">🔗</div>
+        <div class="edu-text">
+          <strong style="color:#FFB080">Şüpheli linklere dikkat:</strong>
+          Bağlantı garip görünüyorsa, hiçbir şey yazmadan sayfayı kapat.
+        </div>
+      </div>
+
+      <div class="edu-item">
+        <div class="edu-bullet">🛡️</div>
+        <div class="edu-text">
+          <strong style="color:#FFB080">Gerçek hayatta ne yapmalısın?</strong>
+          Büyüklerine veya öğretmenine haber ver!
+        </div>
+      </div>
+
+      <div class="edu-item">
+        <div class="edu-bullet">✅</div>
+        <div class="edu-text">
+          <strong style="color:#FFB080">Bu bir egzersizdi:</strong>
+          Siber dedektifler tuzakları bu şekilde öğrenir.
+          Artık daha dikkatlisin! 🕵️
+        </div>
+      </div>
+    </div>
+
+    <!-- GERİ DÖN -->
+    <a href="index.html" class="back-btn">
+      ← Ana Sayfaya Dön ve Devam Et
+    </a>
+
+    <div class="countdown" id="countdown">
+      Otomatik yönlendirme: <span id="timer">10</span> saniye
+    </div>
+
+  </div><!-- /page-wrapper -->
+
+  <script>
+    /* =============================================
+       KIRMIZI MATRIX YAĞMURU
+    ============================================= */
+    const canvas = document.getElementById('matrix-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+    const chars = 'TUZAK!PHISHING⚠DANGER01FAKE';
+    const fs = 14;
+    let cols = Math.floor(canvas.width / fs);
+    let dr = Array(cols).fill(1);
+    setInterval(() => {
+      ctx.fillStyle = 'rgba(10,0,5,0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#FF003C';
+      ctx.font = fs + 'px Courier New';
+      dr.forEach((d, i) => {
+        ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * fs, d * fs);
+        if (d * fs > canvas.height && Math.random() > 0.975) dr[i] = 0;
+        dr[i]++;
+      });
+    }, 60);
+
+    /* =============================================
+       OTOMATİK GERİ SAYIM (10 saniye sonra ana sayfa)
+       İstersen bu bloğu kaldırabilirsin.
+    ============================================= */
+    let timeLeft = 10;
+    const timerEl = document.getElementById('timer');
+    const interval = setInterval(() => {
+      timeLeft--;
+      timerEl.textContent = timeLeft;
+      if (timeLeft <= 0) {
+        clearInterval(interval);
+        window.location.href = 'index.html';
+      }
+    }, 1000);
+  </script>
+
+</body>
+</html>
