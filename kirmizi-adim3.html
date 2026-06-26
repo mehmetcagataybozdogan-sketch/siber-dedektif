@@ -31,9 +31,14 @@
     .hint-toggle{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--accent);cursor:pointer;margin-bottom:8px;background:none;border:none;font-family:inherit;}
     .hint-box{display:none;font-size:13px;color:var(--dim);background:rgba(123,47,255,0.08);border:1px dashed var(--accent);border-radius:8px;padding:12px;margin-bottom:4px;line-height:1.6;}
     .hint-box.visible{display:block;}
-    .next-btn{display:flex;align-items:center;justify-content:center;width:100%;max-width:480px;padding:18px;background:linear-gradient(135deg,rgba(0,191,255,0.15),rgba(0,191,255,0.05));border:2px solid var(--team-color);border-radius:14px;color:var(--team-color);font-family:system-ui,sans-serif;font-size:16px;font-weight:800;letter-spacing:1px;text-align:center;text-decoration:none;cursor:pointer;min-height:56px;margin-top:8px;}
+    /* QR'dan gelinince görünen buton */
+    .next-btn{display:flex;align-items:center;justify-content:center;width:100%;max-width:480px;padding:18px;background:linear-gradient(135deg,rgba(255,0,60,0.15),rgba(255,0,60,0.05));border:2px solid var(--team-color);border-radius:14px;color:var(--team-color);font-family:system-ui,sans-serif;font-size:16px;font-weight:800;letter-spacing:1px;text-align:center;text-decoration:none;cursor:pointer;min-height:56px;margin-top:8px;box-shadow:0 0 16px rgba(255,0,60,0.2);}
+    .next-btn:active{transform:scale(0.98);}
     .finish-btn{display:flex;align-items:center;justify-content:center;width:100%;max-width:480px;padding:20px;background:linear-gradient(135deg,var(--neon),#00BFFF);border:none;border-radius:14px;color:#000;font-family:system-ui,sans-serif;font-size:18px;font-weight:900;text-align:center;text-decoration:none;cursor:pointer;min-height:60px;margin-top:8px;animation:glow 2s ease-in-out infinite;}
     @keyframes glow{0%,100%{box-shadow:0 0 20px rgba(0,255,136,0.4);}50%{box-shadow:0 0 48px rgba(0,255,136,0.8);}}
+    /* QR bekleme mesajı */
+    .qr-hint{width:100%;max-width:480px;margin-top:8px;padding:14px 16px;background:rgba(123,47,255,0.08);border:1px dashed var(--accent);border-radius:12px;font-size:13px;color:var(--dim);text-align:center;line-height:1.6;}
+    .qr-hint strong{color:var(--accent);}
   </style>
 </head>
 <body>
@@ -71,17 +76,44 @@
         <div class="hint-box">Sosyal etkinliklerin yapıldığı yer... İlan panosu var! 📌</div>
       </div>
     </div>
-    <!-- ↓↓↓ BİR SONRAKİ SAYFAYI BURADAN DEĞİŞTİR ↓↓↓ -->
-    <a href="kirmizi-adim4-final.html" class="next-btn">▶ Bir Sonraki İstasyona Geç →</a>
+
+    <!-- QR'dan gelinince görünür, direkt URL'den girilince gizli -->
+    <a href="kirmizi-adim4-final.html" class="next-btn" id="next-btn" style="display:none">
+      ▶ Bir Sonraki İstasyona Geç →
+    </a>
+
+    <!-- QR okutulmadıysa bu mesaj görünür -->
+    <div class="qr-hint" id="qr-hint">
+      🔍 Bir sonraki istasyona geçmek için<br>
+      <strong>o istasyondaki QR kodu okut!</strong>
+    </div>
+
   </div>
   <script>
+    // Matrix arka plan
     const c=document.getElementById('matrix-canvas'),ctx=c.getContext('2d');
     c.width=window.innerWidth;c.height=window.innerHeight;
     window.addEventListener('resize',()=>{c.width=window.innerWidth;c.height=window.innerHeight;});
     const chars='01ABCDEFabcdef#$%@><',fs=13;
     let cols=Math.floor(c.width/fs),dr=Array(cols).fill(1);
     setInterval(()=>{ctx.fillStyle='rgba(10,14,26,0.05)';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#FF003C';ctx.font=fs+'px Courier New';dr.forEach((d,i)=>{ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*fs,d*fs);if(d*fs>c.height&&Math.random()>0.975)dr[i]=0;dr[i]++;});},55);
-    function toggleHint(btn){const box=btn.nextElementSibling;box.classList.toggle('visible');btn.textContent=box.classList.contains('visible')?'🙈 İpucunu gizle':'💡 İpucu göster';}
+
+    function toggleHint(btn){
+      const box=btn.nextElementSibling;
+      box.classList.toggle('visible');
+      btn.textContent=box.classList.contains('visible')?'🙈 İpucunu gizle':'💡 İpucu göster';
+    }
+
+    // =============================================
+    // URL PARAMETRESİ KONTROLÜ
+    // QR kodlar "?gecis=1" ile açar → buton görünür
+    // Direkt URL yazılırsa → buton gizli, uyarı görünür
+    // =============================================
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('gecis') === '1') {
+      document.getElementById('next-btn').style.display = 'flex';
+      document.getElementById('qr-hint').style.display = 'none';
+    }
   </script>
 </body>
 </html>
